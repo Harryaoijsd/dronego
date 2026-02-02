@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Drone GO</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 16px;
+      background: #f7f7f7;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    button {
+      font-size: 20px;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      background: #111;
+      color: white;
+      width: 100%;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #555;
+    }
+    .box {
+      background: white;
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 12px;
+      border: 1px solid #ddd;
+    }
+    .small {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+    .ok {
+      color: #0a7;
+    }
+    .bad {
+      color: #c22;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🚁 Drone GO</h2>
+
+  <div class="box">
+    <div class="small">Backend URL</div>
+    <div id="backendUrl">https://dronetalker.onrender.com</div>
+  </div>
+
+  <div class="box">
+    <div class="small">Status</div>
+    <div id="status">Idle</div>
+    <div id="details" class="small"></div>
+  </div>
+
+  <div class="box">
+    <button id="goBtn">GO</button>
+  </div>
+
+  <script>
+    const BACKEND_URL = "https://dronetalker.onrender.com";
+    const APP_TOKEN   = "dronetalker_9f3a7c1e2b4d8e6f1c9a"; // ← CHANGE THIS
+
+    const statusEl  = document.getElementById("status");
+    const detailsEl = document.getElementById("details");
+    const goBtn     = document.getElementById("goBtn");
+
+    function setStatus(text, ok = null, details = "") {
+      statusEl.textContent = text;
+      statusEl.className = ok === null ? "" : (ok ? "ok" : "bad");
+      detailsEl.textContent = details;
+    }
+
+    function makeRequestId() {
+      return "req_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+    }
+
+    async function sendLocation(lat, lon, accuracy, requestId) {
+      const res = await fetch(BACKEND_URL + "/go", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-APP-TOKEN": APP_TOKEN
+        },
+        body: JSON.stringify({
+          lat: lat,
+          lon: lon,
+          accuracy: accuracy,
+          request_id: requestId
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Request failed");
+      }
+      return data;
+    }
+
+    function getGpsOnce() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("Geolocation not supported"));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+          }
+        );
+      });
+    }
+
+    goBtn.addEventListener("click", async () => {
+      try {
+        goBtn.disabled = true;
+        setStatus("Getting GPS…", null, "Allow location access if prompted");
+
+        const pos = await getGpsOnce();
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const acc = pos.coords.accuracy;
+
+        const reqId = makeRequestId();
+
+        setStatus(
+          "Sending location…",
+          null,
+          `lat=${lat.toFixed(6)} lon=${lon.toFixed(6)} acc=${acc.toFixed(1)}m`
+        );
+
+        await sendLocation(lat, lon, acc, reqId);
+
+        setStatus("Sent OK ✅", true, `request_id=${reqId}`);
+      } catch (err) {
+        setStatus("Failed ❌", false, err.message || String(err));
+      } finally {
+        goBtn.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+</html>
