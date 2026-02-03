@@ -5,509 +5,292 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DroneTalker</title>
 
-  <!-- Leaflet (map) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    :root{
-      --bg:#0b0f14;
-      --card:#121925;
-      --muted:#93a4b8;
-      --text:#e9eef6;
-      --ok:#22c55e;
-      --bad:#ef4444;
-      --warn:#f59e0b;
-      --btn:#1e293b;
-      --primary:#0ea5e9;
-      --shadow: 0 12px 30px rgba(0,0,0,.35);
-      --radius: 16px;
-    }
-
-    *{ box-sizing: border-box; }
-    body{
-      margin:0;
+    body {
+      margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(900px 500px at 20% 0%, #122033 0%, var(--bg) 60%);
-      color: var(--text);
+      background: #0b0f14;
+      color: #e9eef6;
     }
 
-    .wrap{
+    .wrap {
       max-width: 900px;
-      margin: 0 auto;
-      padding: 14px;
+      margin: auto;
+      padding: 12px;
       display: grid;
       gap: 12px;
     }
 
-    .top{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap: 12px;
-    }
-    .brand{ display:flex; flex-direction:column; gap: 2px; }
-    .brand h1{ margin:0; font-size: 18px; letter-spacing: .2px; }
-    .brand .sub{ font-size: 12px; color: var(--muted); }
+    h1 { margin: 0; font-size: 18px; }
+    .sub { font-size: 12px; opacity: 0.7; }
 
-    .pill{
-      font-size: 12px;
-      color: var(--muted);
-      border: 1px solid rgba(147,164,184,.25);
-      padding: 8px 10px;
-      border-radius: 999px;
-      background: rgba(18,25,37,.55);
-      backdrop-filter: blur(6px);
-      white-space: nowrap;
-    }
-
-    .card{
-      background: rgba(18,25,37,.9);
-      border: 1px solid rgba(147,164,184,.18);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    #map{
-      height: 56vh;
-      min-height: 360px;
-      width: 100%;
-    }
-
-    .panel{
-      padding: 12px;
-      display:grid;
-      gap: 10px;
-    }
-
-    .row{
-      display:flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .kv{
-      flex: 1 1 280px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(11,15,20,.55);
-      border: 1px solid rgba(147,164,184,.14);
-      display:grid;
-      gap: 3px;
-      min-width: 260px;
-    }
-    .k{ font-size: 12px; color: var(--muted); }
-    .v{ font-size: 14px; font-variant-numeric: tabular-nums; word-break: break-word; }
-
-    .btnGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    button{
-      border: 1px solid rgba(147,164,184,.20);
-      background: var(--btn);
-      color: var(--text);
-      padding: 14px 14px;
+    .card {
+      background: #121925;
       border-radius: 14px;
-      font-size: 16px;
-      cursor:pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,.25);
-      transition: transform .05s ease, border-color .2s ease;
-      touch-action: manipulation;
-    }
-    button:hover{ border-color: rgba(147,164,184,.35); }
-    button:active{ transform: translateY(1px); }
-    button:disabled{ opacity:.55; cursor:not-allowed; }
-
-    .primary{
-      background: linear-gradient(180deg, rgba(14,165,233,.95), rgba(2,132,199,.95));
-      border-color: rgba(14,165,233,.55);
-    }
-    .danger{
-      background: linear-gradient(180deg, rgba(239,68,68,.95), rgba(220,38,38,.95));
-      border-color: rgba(239,68,68,.55);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
     }
 
-    .status{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding: 10px 12px;
+    #map { height: 45vh; min-height: 300px; }
+
+    .panel { padding: 12px; display: grid; gap: 10px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .box {
+      flex: 1;
+      background: #0b0f14;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* Log Feed Styles */
+    #logFeed {
+        height: 150px;
+        overflow-y: auto;
+        font-family: monospace;
+        color: #00ff9d;
+        display: flex;
+        flex-direction: column-reverse; /* Newest at bottom visually if desired, or top */
+    }
+    .log-item {
+        padding: 2px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .log-time { opacity: 0.5; margin-right: 8px; font-size: 0.9em; }
+
+    button {
+      padding: 14px;
       border-radius: 12px;
-      background: rgba(11,15,20,.55);
-      border: 1px solid rgba(147,164,184,.14);
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      background: #1e293b;
+      color: white;
+      flex: 1;
+      font-weight: 600;
     }
 
-    .dot{
-      width:10px;height:10px;border-radius:99px;
-      background: rgba(147,164,184,.6);
-      box-shadow: 0 0 0 4px rgba(147,164,184,.14);
-      flex: 0 0 10px;
-    }
-    .ok .dot{ background: var(--ok); box-shadow: 0 0 0 4px rgba(34,197,94,.16); }
-    .bad .dot{ background: var(--bad); box-shadow: 0 0 0 4px rgba(239,68,68,.16); }
-    .warn .dot{ background: var(--warn); box-shadow: 0 0 0 4px rgba(245,158,11,.16); }
+    button.primary { background: #0ea5e9; }
+    button.danger { background: #ef4444; }
+    button.warning { background: #f59e0b; color: #111; }
+    button.purple { background: #8b5cf6; }
 
-    .statusText{
-      display:flex;
-      flex-direction:column;
-      gap:2px;
-      min-width: 0;
-    }
-    .statusText .line1{ font-size: 14px; }
-    .statusText .line2{ font-size: 12px; color: var(--muted); word-break: break-word; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .footer{
-      font-size: 12px;
-      color: var(--muted);
-      text-align:center;
-      padding: 0 2px 10px;
+    .status {
+      display: flex; gap: 10px; align-items: center;
+      background: #0b0f14; border-radius: 10px; padding: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
     }
-
-    /* Leaflet dark-ish controls */
-    .leaflet-control-attribution{
-      background: rgba(18,25,37,.65) !important;
-      color: rgba(233,238,246,.65) !important;
-      border-radius: 10px !important;
-      border: 1px solid rgba(147,164,184,.18) !important;
-      padding: 4px 8px !important;
-    }
-    .leaflet-control-zoom a{
-      background: rgba(18,25,37,.75) !important;
-      color: var(--text) !important;
-      border: 1px solid rgba(147,164,184,.18) !important;
-    }
-
-    /* Small screens */
-    @media (max-width: 520px){
-      .btnGrid{ grid-template-columns: 1fr; }
-      .pill{ display:none; }
-    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #888; }
+    .ok .dot { background: #22c55e; }
+    .bad .dot { background: #ef4444; }
+    .warn .dot { background: #f59e0b; }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
+<div class="wrap">
 
-    <div class="top">
-      <div class="brand">
-        <h1>🚁 DroneTalker</h1>
-        <div class="sub">Tap the map (Formby area) to set target. Send updates + commands.</div>
-      </div>
-      <div class="pill">Backend: dronetalker.onrender.com</div>
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h1>🚁 DroneTalker</h1>
+      <div class="sub">Control & Monitor</div>
     </div>
-
-    <div class="card">
-      <div id="map"></div>
-
-      <div class="panel">
-        <div class="row">
-          <div class="kv">
-            <div class="k">Selected target</div>
-            <div class="v" id="targetText">None — tap the map</div>
-          </div>
-
-          <div class="kv">
-            <div class="k">Latest status from Android</div>
-            <div class="v" id="statusLatest">No status yet</div>
-          </div>
-        </div>
-
-        <div class="btnGrid">
-          <button class="primary" id="sendTargetBtn" disabled>Send selected target</button>
-          <button id="useGpsBtn">Use my GPS as target</button>
-          <button id="refreshStatusBtn">Refresh status now</button>
-          <button class="danger" id="clearBtn">Clear marker</button>
-        </div>
-
-        <div class="row">
-          <div class="kv">
-            <div class="k">Commands</div>
-            <div class="v">Send a command to the Android device (it should be polling).</div>
-          </div>
-        </div>
-
-        <div class="btnGrid">
-          <button class="primary" id="cmdGo">GO</button>
-          <button id="cmdHold">HOLD</button>
-          <button id="cmdRth">RTH</button>
-          <button class="danger" id="cmdAbort">ABORT</button>
-        </div>
-
-        <div class="status" id="statusBox">
-          <div class="dot"></div>
-          <div class="statusText">
-            <div class="line1" id="status1">Idle</div>
-            <div class="line2" id="status2">Pick a target or check status.</div>
-          </div>
-        </div>
-      </div>
+    <div class="status" id="statusBox" style="padding: 5px 10px;">
+        <div class="dot"></div>
+        <span id="status1" style="font-size:12px">Ready</span>
     </div>
-
-    <div class="footer">
-      Note: map taps don’t have “real accuracy”, so we send a safe fixed accuracy value for targets chosen on the map.
-    </div>
-
   </div>
+
+  <div class="card">
+    <div id="map"></div>
+    
+    <div class="panel">
+      <div class="row">
+        <div class="box">
+          <strong>Target Coords</strong><br>
+          <span id="targetText">None selected</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="primary" id="sendBtn" disabled>FLY TO TARGET</button>
+        <button id="gpsBtn">USE MY GPS</button>
+      </div>
+
+      <div class="row" style="margin-top:10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:10px;">
+        <button class="warning" onclick="sendCommand('HOVER')">✋ HOVER</button>
+        <button class="purple" onclick="sendCommand('RTH')">🏠 RTH</button>
+      </div>
+      
+      <div class="box" id="logFeed">
+        <div style="opacity:0.5; text-align:center; padding-top:60px;">Waiting for drone connection...</div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <script>
   // =============================
   // CONFIG
   // =============================
-  const BASE_URL  = "https://dronetalker.onrender.com";
+  const BASE_URL = "https://dronetalker.onrender.com"; // Change if running locally
   const APP_TOKEN = "dronetalker_9f3a7c1e2b4d8e6f1c9a";
 
-  // Formby-ish centre
   const MAP_CENTER = { lat: 53.5586, lon: -3.0677 };
   const MAP_ZOOM = 13;
 
-  // Polling
-  const STATUS_POLL_MS = 2000;
-
   // =============================
-  // UI Refs
+  // UI refs
   // =============================
   const targetText = document.getElementById("targetText");
-  const statusLatest = document.getElementById("statusLatest");
-
-  const sendTargetBtn = document.getElementById("sendTargetBtn");
-  const useGpsBtn = document.getElementById("useGpsBtn");
-  const refreshStatusBtn = document.getElementById("refreshStatusBtn");
-  const clearBtn = document.getElementById("clearBtn");
-
-  const cmdGo = document.getElementById("cmdGo");
-  const cmdHold = document.getElementById("cmdHold");
-  const cmdRth = document.getElementById("cmdRth");
-  const cmdAbort = document.getElementById("cmdAbort");
-
+  const sendBtn = document.getElementById("sendBtn");
+  const gpsBtn = document.getElementById("gpsBtn");
   const statusBox = document.getElementById("statusBox");
   const status1 = document.getElementById("status1");
-  const status2 = document.getElementById("status2");
+  const logFeed = document.getElementById("logFeed");
 
-  function setStatus(mode, line1, line2){
-    statusBox.classList.remove("ok","bad","warn");
-    if(mode) statusBox.classList.add(mode);
-    status1.textContent = line1;
-    status2.textContent = line2 || "";
-  }
-
-  function fmtLatLon(lat, lon){
-    return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-  }
-
-  function makeId(prefix){
-    return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  }
-
-  async function fetchJson(url, opts){
-    const res = await fetch(url, opts);
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); }
-    catch { throw new Error("Server returned non-JSON: " + text.slice(0,120)); }
-    if(!res.ok || !data.ok){
-      throw new Error(data.error || ("HTTP " + res.status));
-    }
-    return data;
+  function setStatus(type, text) {
+    statusBox.className = "status " + (type || "");
+    status1.textContent = text;
   }
 
   // =============================
-  // API: target
+  // API CALLS
   // =============================
-  async function sendTarget(lat, lon, accuracy){
-    const payload = {
-      lat: lat,
-      lon: lon,
-      accuracy: accuracy,
-      request_id: makeId("req")
-    };
-
-    return fetchJson(BASE_URL + "/go", {
+  
+  // 1. Send Coordinates (Existing)
+  async function sendTarget(lat, lon, acc) {
+    const res = await fetch(BASE_URL + "/go", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-APP-TOKEN": APP_TOKEN
-      },
-      body: JSON.stringify(payload)
+      headers: { "Content-Type": "application/json", "X-APP-TOKEN": APP_TOKEN },
+      body: JSON.stringify({
+        lat: lat, lon: lon, accuracy: acc,
+        request_id: "req_" + Date.now()
+      })
     });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
   }
 
-  // =============================
-  // API: status (Android -> web)
-  // =============================
-  let lastStatusId = null;
-
-  async function getLatestStatus(){
-    return fetchJson(BASE_URL + "/status/latest", {
-      method: "GET",
-      headers: { "X-APP-TOKEN": APP_TOKEN }
-    });
+  // 2. Send Command (Hover / RTH)
+  async function sendCommand(cmd) {
+    try {
+        setStatus("warn", "Sending " + cmd + "...");
+        const res = await fetch(BASE_URL + "/drone/cmd", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-APP-TOKEN": APP_TOKEN },
+            body: JSON.stringify({ command: cmd })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            setStatus("ok", cmd + " Sent!");
+            // Manually add to log for immediate feedback
+            addLogToUI(`Command sent: ${cmd}`, Date.now()/1000);
+        }
+    } catch (e) {
+        setStatus("bad", "Cmd Failed");
+    }
   }
 
-  async function pollStatus(){
-    try{
-      const data = await getLatestStatus();
-      const s = data.status;
-
-      if(s && s.status_id && s.status_id !== lastStatusId){
-        lastStatusId = s.status_id;
-
-        const mode = (s.level === "info") ? null : s.level; // info|ok|warn|bad
-        const msg = s.message || "Status update";
-        const age = data.age_seconds;
-
-        statusLatest.textContent = `${msg}  (age ${age}s)`;
-        setStatus(mode, "Status received", msg);
-      }
-    }catch(e){
-      // Ignore; could be "no status" early on or brief network blips
+  // 3. Poll for Logs
+  async function fetchLogs() {
+    try {
+        const res = await fetch(BASE_URL + "/drone/status", {
+            method: "GET",
+            headers: { "X-APP-TOKEN": APP_TOKEN }
+        });
+        const data = await res.json();
+        if (data.ok && data.logs) {
+            renderLogs(data.logs);
+        }
+    } catch (e) {
+        console.log("Log fetch error", e);
     }
   }
 
   // =============================
-  // API: commands (web -> Android)
+  // UI LOGIC
   // =============================
-  async function sendCommand(command){
-    const payload = {
-      command: String(command).toUpperCase(),
-      command_id: makeId("cmd"),
-      data_json: ""
-    };
 
-    return fetchJson(BASE_URL + "/command", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-APP-TOKEN": APP_TOKEN
-      },
-      body: JSON.stringify(payload)
-    });
+  // Poll logs every 2 seconds
+  setInterval(fetchLogs, 2000);
+
+  function renderLogs(logs) {
+      if(logs.length === 0) return;
+      
+      let html = "";
+      // Server returns newest first. 
+      logs.forEach(l => {
+          const date = new Date(l.time * 1000);
+          const timeStr = date.toLocaleTimeString([], { hour12: false });
+          html += `<div class="log-item"><span class="log-time">[${timeStr}]</span> ${l.message}</div>`;
+      });
+      logFeed.innerHTML = html;
+  }
+  
+  function addLogToUI(msg, timestamp) {
+      const date = new Date(timestamp * 1000);
+      const timeStr = date.toLocaleTimeString([], { hour12: false });
+      const entry = `<div class="log-item"><span class="log-time">[${timeStr}]</span> ${msg}</div>`;
+      logFeed.innerHTML = entry + logFeed.innerHTML;
   }
 
   // =============================
-  // Map
+  // MAP LOGIC
   // =============================
-  const map = L.map("map", { zoomControl: true }).setView([MAP_CENTER.lat, MAP_CENTER.lon], MAP_ZOOM);
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19
-  }).addTo(map);
+  const map = L.map("map").setView([MAP_CENTER.lat, MAP_CENTER.lon], MAP_ZOOM);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
 
   let marker = null;
   let selected = null;
 
-  function setMarker(lat, lon){
-    selected = { lat, lon };
-    if(marker) marker.setLatLng([lat, lon]);
-    else marker = L.marker([lat, lon]).addTo(map);
-
-    targetText.textContent = fmtLatLon(lat, lon);
-    sendTargetBtn.disabled = false;
-    setStatus(null, "Target selected", "Press “Send selected target”.");
-  }
-
-  function clearMarker(){
-    selected = null;
-    sendTargetBtn.disabled = true;
-    targetText.textContent = "None — tap the map";
-    if(marker){
-      map.removeLayer(marker);
-      marker = null;
-    }
-    setStatus(null, "Cleared", "Pick a spot again.");
-  }
-
-  map.on("click", (e) => setMarker(e.latlng.lat, e.latlng.lng));
-  clearBtn.addEventListener("click", clearMarker);
-
-  // =============================
-  // Buttons
-  // =============================
-  sendTargetBtn.addEventListener("click", async () => {
-    if(!selected) return;
-
-    try{
-      sendTargetBtn.disabled = true;
-      useGpsBtn.disabled = true;
-      clearBtn.disabled = true;
-
-      setStatus("warn", "Sending target…", fmtLatLon(selected.lat, selected.lon));
-
-      // Map tap has no real accuracy; use a safe fixed value (must pass your backend MAX_ACCURACY_M)
-      await sendTarget(selected.lat, selected.lon, 15.0);
-
-      setStatus("ok", "Target sent ✅", fmtLatLon(selected.lat, selected.lon));
-    }catch(err){
-      setStatus("bad", "Send failed ❌", err.message || String(err));
-    }finally{
-      useGpsBtn.disabled = false;
-      clearBtn.disabled = false;
-      sendTargetBtn.disabled = !selected;
-    }
+  map.on("click", e => {
+    selected = e.latlng;
+    if (!marker) marker = L.marker(selected).addTo(map);
+    else marker.setLatLng(selected);
+    
+    targetText.textContent = `${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`;
+    sendBtn.disabled = false;
+    sendBtn.textContent = "FLY TO TARGET";
+    setStatus("ok", "Target Set");
   });
 
-  useGpsBtn.addEventListener("click", async () => {
-    try{
-      sendTargetBtn.disabled = true;
-      useGpsBtn.disabled = true;
-      clearBtn.disabled = true;
-
-      setStatus("warn", "Getting GPS…", "Allow location if prompted.");
-
-      const pos = await new Promise((resolve, reject) => {
-        if(!navigator.geolocation) return reject(new Error("Geolocation not supported"));
-        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-      });
-
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      const acc = pos.coords.accuracy;
-
-      setMarker(lat, lon);
-      map.setView([lat, lon], Math.max(map.getZoom(), 15));
-
-      setStatus("warn", "Sending your GPS…", `±${acc.toFixed(1)}m`);
-      await sendTarget(lat, lon, acc);
-
-      setStatus("ok", "GPS target sent ✅", `${fmtLatLon(lat, lon)}  ±${acc.toFixed(1)}m`);
-    }catch(err){
-      setStatus("bad", "GPS failed ❌", err.message || String(err));
-    }finally{
-      useGpsBtn.disabled = false;
-      clearBtn.disabled = false;
-      sendTargetBtn.disabled = !selected;
+  sendBtn.onclick = async () => {
+    try {
+      sendBtn.disabled = true;
+      setStatus("warn", "Sending...");
+      await sendTarget(selected.lat, selected.lng, 15.0);
+      setStatus("ok", "Sent Success");
+      sendBtn.textContent = "SENT";
+    } catch (e) {
+      setStatus("bad", "Failed");
+      sendBtn.disabled = false;
     }
-  });
+  };
 
-  refreshStatusBtn.addEventListener("click", async () => {
-    setStatus("warn", "Refreshing status…", "");
-    await pollStatus();
-    setStatus(null, "Refreshed", "If no status appears, Android hasn’t posted one yet.");
-  });
-
-  async function handleCommand(cmd){
-    try{
-      setStatus("warn", `Sending command: ${cmd}`, "");
-      await sendCommand(cmd);
-      setStatus("ok", `Command sent ✅`, cmd);
-    }catch(err){
-      setStatus("bad", `Command failed ❌`, err.message || String(err));
-    }
-  }
-
-  cmdGo.addEventListener("click", () => handleCommand("GO"));
-  cmdHold.addEventListener("click", () => handleCommand("HOLD"));
-  cmdRth.addEventListener("click", () => handleCommand("RTH"));
-  cmdAbort.addEventListener("click", () => handleCommand("ABORT"));
-
-  // =============================
-  // Start polling status
-  // =============================
-  setStatus(null, "Idle", "Tap map to choose a target. Status will appear when Android posts it.");
-  setInterval(pollStatus, STATUS_POLL_MS);
+  gpsBtn.onclick = async () => {
+    setStatus("warn", "Locating...");
+    navigator.geolocation.getCurrentPosition(async pos => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        targetText.textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+        try {
+            await sendTarget(latitude, longitude, accuracy);
+            setStatus("ok", "GPS Sent");
+        } catch(e) {
+            setStatus("bad", "Send Fail");
+        }
+    }, err => {
+        setStatus("bad", "GPS Error");
+    }, { enableHighAccuracy: true });
+  };
 </script>
 </body>
 </html>
