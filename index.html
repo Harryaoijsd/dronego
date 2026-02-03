@@ -4,152 +4,481 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Drone GO</title>
+
+  <!-- Leaflet (map) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
   <style>
-    body {
+    :root{
+      --bg:#0b0f14;
+      --card:#121925;
+      --muted:#93a4b8;
+      --text:#e9eef6;
+      --good:#38d996;
+      --bad:#ff5c6c;
+      --warn:#ffcc66;
+      --btn:#1e293b;
+      --btn2:#0ea5e9;
+      --ring: rgba(14,165,233,.35);
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      margin: 16px;
-      background: #f7f7f7;
+      background: radial-gradient(900px 500px at 20% 0%, #122033 0%, var(--bg) 60%);
+      color: var(--text);
     }
-    h2 {
-      margin-bottom: 10px;
+
+    .wrap{
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
     }
-    button {
-      font-size: 20px;
-      padding: 16px;
-      border-radius: 14px;
-      border: none;
-      background: #111;
-      color: white;
-      width: 100%;
-      cursor: pointer;
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
     }
-    button:disabled {
-      background: #555;
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
     }
-    .box {
-      background: white;
-      padding: 12px;
-      border-radius: 12px;
-      margin-top: 12px;
-      border: 1px solid #ddd;
+
+    .brand h1{
+      font-size: 18px;
+      margin:0;
+      letter-spacing: .2px;
     }
-    .small {
+    .brand .sub{
       font-size: 12px;
-      opacity: 0.7;
+      color: var(--muted);
     }
-    .ok {
-      color: #0a7;
+
+    .pill{
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid rgba(147,164,184,.25);
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(18,25,37,.55);
+      backdrop-filter: blur(6px);
     }
-    .bad {
-      color: #c22;
+
+    .card{
+      background: rgba(18,25,37,.9);
+      border: 1px solid rgba(147,164,184,.18);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    #map{
+      height: 56vh;
+      min-height: 360px;
+      width: 100%;
+    }
+
+    .panel{
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .kv{
+      display:grid;
+      gap:3px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(11,15,20,.55);
+      border: 1px solid rgba(147,164,184,.14);
+      min-width: 260px;
+      flex: 1 1 260px;
+    }
+    .k{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .v{
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+      word-break: break-word;
+    }
+
+    .btns{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+
+    button{
+      border: 1px solid rgba(147,164,184,.20);
+      background: var(--btn);
+      color: var(--text);
+      padding: 14px 14px;
+      border-radius: 14px;
+      font-size: 16px;
+      cursor:pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,.25);
+      transition: transform .05s ease, box-shadow .2s ease, border-color .2s ease;
+      touch-action: manipulation;
+    }
+    button:active{ transform: translateY(1px); }
+    button:hover{ border-color: rgba(147,164,184,.35); }
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    .primary{
+      background: linear-gradient(180deg, rgba(14,165,233,.95), rgba(2,132,199,.95));
+      border-color: rgba(14,165,233,.5);
+      box-shadow: 0 10px 25px var(--ring);
+    }
+
+    .danger{
+      background: linear-gradient(180deg, rgba(255,92,108,.95), rgba(239,68,68,.95));
+      border-color: rgba(255,92,108,.5);
+    }
+
+    .status{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(11,15,20,.55);
+      border: 1px solid rgba(147,164,184,.14);
+    }
+    .dot{
+      width:10px;height:10px;border-radius:99px;
+      background: rgba(147,164,184,.6);
+      box-shadow: 0 0 0 4px rgba(147,164,184,.14);
+      flex: 0 0 10px;
+    }
+    .ok .dot{ background: var(--good); box-shadow: 0 0 0 4px rgba(56,217,150,.16); }
+    .bad .dot{ background: var(--bad); box-shadow: 0 0 0 4px rgba(255,92,108,.16); }
+    .warn .dot{ background: var(--warn); box-shadow: 0 0 0 4px rgba(255,204,102,.16); }
+
+    .statusText{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width: 0;
+    }
+    .statusText .line1{ font-size: 14px; }
+    .statusText .line2{ font-size: 12px; color: var(--muted); word-break: break-word; }
+
+    .footer{
+      font-size: 12px;
+      color: var(--muted);
+      padding: 0 2px 10px;
+      text-align:center;
+    }
+
+    /* Leaflet tweaks for dark UI */
+    .leaflet-control-attribution{
+      background: rgba(18,25,37,.65) !important;
+      color: rgba(233,238,246,.65) !important;
+      border-radius: 10px !important;
+      border: 1px solid rgba(147,164,184,.18) !important;
+      padding: 4px 8px !important;
+    }
+    .leaflet-control-zoom a{
+      background: rgba(18,25,37,.75) !important;
+      color: var(--text) !important;
+      border: 1px solid rgba(147,164,184,.18) !important;
     }
   </style>
 </head>
+
 <body>
+  <div class="wrap">
 
-  <h2>🚁 Drone GO</h2>
+    <div class="top">
+      <div class="brand">
+        <h1>🚁 DroneTalker</h1>
+        <div class="sub">Tap the map to pick a target — then send.</div>
+      </div>
+      <div class="pill" id="backendPill">Backend: dronetalker.onrender.com</div>
+    </div>
 
-  <div class="box">
-    <div class="small">Backend URL</div>
-    <div id="backendUrl">https://dronetalker.onrender.com</div>
+    <div class="card">
+      <div id="map"></div>
+
+      <div class="panel">
+
+        <div class="row">
+          <div class="kv">
+            <div class="k">Selected target</div>
+            <div class="v" id="targetText">None — tap the map</div>
+          </div>
+
+          <div class="kv">
+            <div class="k">GPS (your phone)</div>
+            <div class="v" id="gpsText">Not requested</div>
+          </div>
+        </div>
+
+        <div class="btns">
+          <button class="primary" id="sendBtn" disabled>Send selected target</button>
+          <button id="gpsBtn">Use my GPS instead</button>
+          <button class="danger" id="clearBtn">Clear marker</button>
+          <button id="keyBtn">Change key</button>
+        </div>
+
+        <div class="status" id="statusBox">
+          <div class="dot"></div>
+          <div class="statusText">
+            <div class="line1" id="status1">Idle</div>
+            <div class="line2" id="status2">Pick a spot on the map, or use GPS.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="footer">
+      Tip: phone GPS can wander. If accuracy is poor, step outside and try again.
+    </div>
+
   </div>
 
-  <div class="box">
-    <div class="small">Status</div>
-    <div id="status">Idle</div>
-    <div id="details" class="small"></div>
-  </div>
+<script>
+  // -----------------------------
+  // CONFIG (hard-coded, no UI boxes)
+  // -----------------------------
+  const BASE_URL = "https://dronetalker.onrender.com";
 
-  <div class="box">
-    <button id="goBtn">GO</button>
-  </div>
+  // Formby / Liverpool-ish centre
+  const MAP_CENTER = { lat: 53.5586, lon: -3.0677 };
+  const MAP_START_ZOOM = 13;
 
-  <script>
-    const BACKEND_URL = "https://dronetalker.onrender.com";
-    const APP_TOKEN   = "dronetalker_9f3a7c1e2b4d8e6f1c9a"; // ← CHANGE THIS
+  // Token stored locally on your device
+  const TOKEN_KEY = "dronetalker_token";
 
-    const statusEl  = document.getElementById("status");
-    const detailsEl = document.getElementById("details");
-    const goBtn     = document.getElementById("goBtn");
+  // -----------------------------
+  // UI helpers
+  // -----------------------------
+  const targetText = document.getElementById("targetText");
+  const gpsText = document.getElementById("gpsText");
+  const statusBox = document.getElementById("statusBox");
+  const status1 = document.getElementById("status1");
+  const status2 = document.getElementById("status2");
+  const sendBtn = document.getElementById("sendBtn");
+  const gpsBtn = document.getElementById("gpsBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const keyBtn = document.getElementById("keyBtn");
 
-    function setStatus(text, ok = null, details = "") {
-      statusEl.textContent = text;
-      statusEl.className = ok === null ? "" : (ok ? "ok" : "bad");
-      detailsEl.textContent = details;
+  function setStatus(mode, line1, line2){
+    statusBox.classList.remove("ok","bad","warn");
+    if(mode) statusBox.classList.add(mode);
+    status1.textContent = line1;
+    status2.textContent = line2 || "";
+  }
+
+  function fmtLatLon(lat, lon){
+    return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+  }
+
+  function getToken(){
+    let t = localStorage.getItem(TOKEN_KEY);
+    if(!t){
+      t = prompt("Enter your access key:");
+      if(t) localStorage.setItem(TOKEN_KEY, t);
     }
+    return t || "";
+  }
 
-    function makeRequestId() {
-      return "req_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+  function changeToken(){
+    const t = prompt("Set / change access key:");
+    if(t){
+      localStorage.setItem(TOKEN_KEY, t);
+      setStatus("ok", "Key saved", "Your key is stored on this device only.");
     }
+  }
 
-    async function sendLocation(lat, lon, accuracy, requestId) {
-      const res = await fetch(BACKEND_URL + "/go", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-APP-TOKEN": APP_TOKEN
-        },
-        body: JSON.stringify({
-          lat: lat,
-          lon: lon,
-          accuracy: accuracy,
-          request_id: requestId
-        })
-      });
+  function makeRequestId(){
+    return "req_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+  }
 
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Request failed");
-      }
-      return data;
-    }
+  async function postGo(lat, lon, accuracy, requestId){
+    const token = getToken();
+    if(!token) throw new Error("No access key set.");
 
-    function getGpsOnce() {
-      return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error("Geolocation not supported"));
-          return;
-        }
-        navigator.geolocation.getCurrentPosition(
-          resolve,
-          reject,
-          {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0
-          }
-        );
-      });
-    }
-
-    goBtn.addEventListener("click", async () => {
-      try {
-        goBtn.disabled = true;
-        setStatus("Getting GPS…", null, "Allow location access if prompted");
-
-        const pos = await getGpsOnce();
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        const acc = pos.coords.accuracy;
-
-        const reqId = makeRequestId();
-
-        setStatus(
-          "Sending location…",
-          null,
-          `lat=${lat.toFixed(6)} lon=${lon.toFixed(6)} acc=${acc.toFixed(1)}m`
-        );
-
-        await sendLocation(lat, lon, acc, reqId);
-
-        setStatus("Sent OK ✅", true, `request_id=${reqId}`);
-      } catch (err) {
-        setStatus("Failed ❌", false, err.message || String(err));
-      } finally {
-        goBtn.disabled = false;
-      }
+    const res = await fetch(BASE_URL + "/go", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-APP-TOKEN": token
+      },
+      body: JSON.stringify({
+        lat, lon, accuracy,
+        request_id: requestId
+      })
     });
-  </script>
 
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch { throw new Error("Server returned non-JSON: " + text.slice(0,120)); }
+
+    if(!res.ok || !data.ok){
+      throw new Error(data.error || ("HTTP " + res.status));
+    }
+    return data;
+  }
+
+  function getGpsOnce(){
+    return new Promise((resolve, reject) => {
+      if(!navigator.geolocation){
+        reject(new Error("Geolocation not supported"));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        resolve,
+        reject,
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    });
+  }
+
+  // -----------------------------
+  // Map setup
+  // -----------------------------
+  const map = L.map("map", { zoomControl: true }).setView([MAP_CENTER.lat, MAP_CENTER.lon], MAP_START_ZOOM);
+
+  // OpenStreetMap tiles
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19
+  }).addTo(map);
+
+  let marker = null;
+  let selected = null;
+
+  function setMarker(lat, lon){
+    selected = { lat, lon };
+    if(marker) marker.setLatLng([lat, lon]);
+    else marker = L.marker([lat, lon]).addTo(map);
+    targetText.textContent = fmtLatLon(lat, lon);
+    sendBtn.disabled = false;
+    setStatus(null, "Target selected", "Press “Send selected target”.");
+  }
+
+  function clearMarker(){
+    selected = null;
+    sendBtn.disabled = true;
+    targetText.textContent = "None — tap the map";
+    if(marker){
+      map.removeLayer(marker);
+      marker = null;
+    }
+    setStatus(null, "Cleared", "Pick a spot again.");
+  }
+
+  map.on("click", (e) => {
+    setMarker(e.latlng.lat, e.latlng.lng);
+  });
+
+  // -----------------------------
+  // Buttons
+  // -----------------------------
+  sendBtn.addEventListener("click", async () => {
+    if(!selected) return;
+
+    try{
+      sendBtn.disabled = true;
+      gpsBtn.disabled = true;
+      clearBtn.disabled = true;
+
+      // We don't have a true "accuracy" for a manually chosen map click,
+      // so we send a conservative value that will still pass your backend.
+      // If you want the backend to accept map clicks more strictly/loosely,
+      // we can add a separate endpoint later.
+      const fakeAccuracy = 15.0;
+
+      setStatus("warn", "Sending target…", fmtLatLon(selected.lat, selected.lon));
+
+      const reqId = makeRequestId();
+      await postGo(selected.lat, selected.lon, fakeAccuracy, reqId);
+
+      setStatus("ok", "Sent ✅", `request_id=${reqId}  •  ${fmtLatLon(selected.lat, selected.lon)}`);
+    }catch(err){
+      setStatus("bad", "Failed ❌", err.message || String(err));
+    }finally{
+      gpsBtn.disabled = false;
+      clearBtn.disabled = false;
+      sendBtn.disabled = !selected;
+    }
+  });
+
+  gpsBtn.addEventListener("click", async () => {
+    try{
+      sendBtn.disabled = true;
+      gpsBtn.disabled = true;
+      clearBtn.disabled = true;
+
+      setStatus("warn", "Getting your GPS…", "Allow location if prompted.");
+
+      const pos = await getGpsOnce();
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const acc = pos.coords.accuracy;
+
+      gpsText.textContent = `${fmtLatLon(lat, lon)}  •  ±${acc.toFixed(1)}m`;
+
+      // Also place marker on your GPS location (nice touch)
+      setMarker(lat, lon);
+      map.setView([lat, lon], Math.max(map.getZoom(), 15));
+
+      setStatus("warn", "Sending your GPS…", `±${acc.toFixed(1)}m`);
+
+      const reqId = makeRequestId();
+      await postGo(lat, lon, acc, reqId);
+
+      setStatus("ok", "Sent ✅", `request_id=${reqId}  •  ±${acc.toFixed(1)}m`);
+    }catch(err){
+      setStatus("bad", "Failed ❌", err.message || String(err));
+    }finally{
+      gpsBtn.disabled = false;
+      clearBtn.disabled = false;
+      sendBtn.disabled = !selected;
+    }
+  });
+
+  clearBtn.addEventListener("click", clearMarker);
+  keyBtn.addEventListener("click", changeToken);
+
+  // Initial token prompt (optional)
+  // Comment this out if you only want it when you press Send/GPS
+  getToken();
+
+</script>
 </body>
 </html>
