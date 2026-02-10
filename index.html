@@ -313,10 +313,18 @@
       if (!posMsg && m.startsWith("POS |")) posMsg = { msg: m, time: l.time };
       if (battPercent === null) {
         // supports "BATT | percent=87" or "STATUS | batt=87%"
-        const b1 = m.match(/\bpercent=(\d{1,3})\b/i);
-        const b2 = m.match(/\bbatt=(\d{1,3})%?/i);
-        if (b1) battPercent = parseInt(b1[1], 10);
-        else if (b2) battPercent = parseInt(b2[1], 10);
+          // battery formats supported:
+          // 1) "BATTERY | 91%"
+          // 2) "BATT | percent=91"
+          // 3) "STATUS | batt=91%"
+          const b0 = m.match(/^BATTERY\s*\|\s*(\d{1,3})\s*%/i);
+          const b1 = m.match(/\bpercent=(\d{1,3})\b/i);
+          const b2 = m.match(/\bbatt=(\d{1,3})%?/i);
+
+          if (b0) battPercent = parseInt(b0[1], 10);
+          else if (b1) battPercent = parseInt(b1[1], 10);
+          else if (b2) battPercent = parseInt(b2[1], 10);
+
       }
       if (posMsg && battPercent !== null) break;
     }
