@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Coops Fly To Location</title>
+  <title>DroneTalker</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -15,15 +15,13 @@
       background: #0b0f14;
       color: #e9eef6;
     }
-
     .wrap {
-      max-width: 950px;
+      max-width: 980px;
       margin: auto;
       padding: 12px;
       display: grid;
       gap: 12px;
     }
-
     h1 { margin: 0; font-size: 18px; }
     .sub { font-size: 12px; opacity: 0.7; }
 
@@ -35,17 +33,17 @@
       flex-wrap: wrap;
     }
 
+    .pillrow { display:flex; gap: 10px; flex-wrap: wrap; }
     .pill {
-      display:flex;
-      gap:10px;
-      align-items:center;
-      background: #121925;
-      border: 1px solid rgba(255,255,255,0.1);
+      background: #0b0f14;
+      border: 1px solid rgba(255,255,255,0.10);
       border-radius: 999px;
       padding: 8px 12px;
       font-size: 12px;
+      display:flex;
+      gap: 8px;
+      align-items:center;
     }
-
     .dot { width: 10px; height: 10px; border-radius: 50%; background: #888; }
     .ok .dot { background: #22c55e; }
     .bad .dot { background: #ef4444; }
@@ -57,8 +55,7 @@
       overflow: hidden;
       border: 1px solid rgba(255,255,255,0.1);
     }
-
-    #map { height: 45vh; min-height: 320px; }
+    #map { height: 55vh; min-height: 340px; }
 
     .panel { padding: 12px; display: grid; gap: 10px; }
     .row { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -75,38 +72,35 @@
     #logFeed {
       height: 200px;
       overflow-y: auto;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-family: monospace;
       color: #00ff9d;
-      display: flex;
-      flex-direction: column-reverse;
     }
     .log-item {
       padding: 2px 0;
       border-bottom: 1px solid rgba(255,255,255,0.05);
       white-space: pre-wrap;
+      word-break: break-word;
     }
-    .log-time { opacity: 0.5; margin-right: 8px; font-size: 0.9em; }
+    .log-time { opacity: 0.55; margin-right: 8px; font-size: 0.9em; }
 
     button {
-      padding: 12px;
+      padding: 14px;
       border-radius: 12px;
       border: none;
-      font-size: 14px;
+      font-size: 15px;
       cursor: pointer;
       background: #1e293b;
       color: white;
       flex: 1;
-      font-weight: 650;
+      font-weight: 600;
     }
-
     button.primary { background: #0ea5e9; }
-    button.danger { background: #ef4444; }
+    button.danger  { background: #ef4444; }
     button.warning { background: #f59e0b; color: #111; }
-    button.purple { background: #8b5cf6; }
-
+    button.purple  { background: #8b5cf6; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .small { font-size: 12px; opacity: 0.85; }
+    .small { font-size: 12px; opacity: 0.75; }
   </style>
 </head>
 
@@ -115,30 +109,15 @@
 
   <div class="topbar">
     <div>
-      <h1>🛰️ Coops Fly To Location</h1>
-      <div class="sub">External control • Live tracking • Plain text status</div>
+      <h1>🚁 DroneTalker</h1>
+      <div class="sub">Control & Monitor</div>
     </div>
 
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <div class="pill" id="connPill">
-        <div class="dot"></div>
-        <span id="connText">Drone: Unknown</span>
-      </div>
-
-      <div class="pill">
-        <strong>Battery:</strong>
-        <span id="battText">--%</span>
-      </div>
-
-      <div class="pill">
-        <strong>Altitude:</strong>
-        <span id="altText">-- m</span>
-      </div>
-
-      <div class="pill">
-        <strong>Last seen:</strong>
-        <span id="seenText">--</span>
-      </div>
+    <div class="pillrow">
+      <div class="pill" id="connPill"><div class="dot"></div><span id="connText">Drone: unknown</span></div>
+      <div class="pill" id="battPill"><div class="dot"></div><span id="battText">Battery: --%</span></div>
+      <div class="pill" id="altPill"><div class="dot"></div><span id="altText">Alt: -- m</span></div>
+      <div class="pill"><span id="posText">Pos: --</span></div>
     </div>
   </div>
 
@@ -146,38 +125,31 @@
     <div id="map"></div>
 
     <div class="panel">
+
       <div class="row">
-        <div class="box">
-          <strong>Drone Position</strong><br>
-          <span id="posText">No GPS yet</span><br>
-          <span class="small" id="posAgeText"></span>
-        </div>
         <div class="box">
           <strong>Target Coords</strong><br>
           <span id="targetText">None selected</span>
+          <div class="small" id="targetNote">Click map to choose a target.</div>
         </div>
       </div>
 
       <div class="row">
-        <button class="primary" id="sendBtn" disabled>SEND TARGET</button>
+        <button class="primary" id="sendBtn" disabled>FLY TO TARGET</button>
         <button id="gpsBtn">USE MY GPS</button>
+        <button class="danger" id="clearBtn">CLEAR QUEUE</button>
       </div>
 
-      <div class="row">
+      <div class="row" style="margin-top:10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:10px;">
         <button class="warning" onclick="sendCommand('HOVER')">✋ HOVER</button>
         <button class="purple" onclick="sendCommand('RTH')">🏠 RTH</button>
-        <button class="danger" onclick="sendCommand('LAND')">⬇️ LAND</button>
-      </div>
-
-      <div class="row">
-        <button onclick="clearTarget()">🧹 Clear Target</button>
-        <button onclick="clearCommand()">🧹 Clear Command</button>
-        <button class="danger" onclick="clearLogs()">🧹 Clear Logs</button>
+        <button class="danger" onclick="sendCommand('LAND')">🧱 LAND</button>
       </div>
 
       <div class="box" id="logFeed">
-        <div style="opacity:0.5; text-align:center; padding-top:80px;">Waiting for status…</div>
+        <div style="opacity:0.5; text-align:center; padding-top:60px;">Waiting for logs…</div>
       </div>
+
     </div>
   </div>
 </div>
@@ -192,52 +164,31 @@
   const MAP_CENTER = { lat: 53.5586, lon: -3.0677 };
   const MAP_ZOOM = 13;
 
-  const POLL_LOGS_MS = 1500;
-  const DRONE_OFFLINE_AFTER_S = 8;
-
   // =============================
   // UI refs
   // =============================
   const targetText = document.getElementById("targetText");
   const sendBtn = document.getElementById("sendBtn");
   const gpsBtn = document.getElementById("gpsBtn");
+  const clearBtn = document.getElementById("clearBtn");
   const logFeed = document.getElementById("logFeed");
 
   const connPill = document.getElementById("connPill");
+  const battPill = document.getElementById("battPill");
+  const altPill  = document.getElementById("altPill");
+
   const connText = document.getElementById("connText");
   const battText = document.getElementById("battText");
-  const altText = document.getElementById("altText");
-  const seenText = document.getElementById("seenText");
-  const posText = document.getElementById("posText");
-  const posAgeText = document.getElementById("posAgeText");
+  const altText  = document.getElementById("altText");
+  const posText  = document.getElementById("posText");
+
+  function setPill(pill, type, textEl, text) {
+    pill.className = "pill " + (type || "");
+    textEl.textContent = text;
+  }
 
   // =============================
-  // Map
-  // =============================
-  const map = L.map("map").setView([MAP_CENTER.lat, MAP_CENTER.lon], MAP_ZOOM);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
-
-  let targetMarker = null;
-  let selected = null;
-
-  let droneMarker = null;
-  let lastDroneFix = null; // {lat, lon, alt, timeMs}
-  let lastStatusSeenMs = 0;
-  let lastBatt = null;
-  let lastAlt = null;
-
-  map.on("click", e => {
-    selected = e.latlng;
-    if (!targetMarker) targetMarker = L.marker(selected).addTo(map);
-    else targetMarker.setLatLng(selected);
-
-    targetText.textContent = `${selected.lat.toFixed(6)}, ${selected.lng.toFixed(6)}`;
-    sendBtn.disabled = false;
-    addLocalLog(`Target selected: ${selected.lat.toFixed(6)}, ${selected.lng.toFixed(6)}`);
-  });
-
-  // =============================
-  // API CALLS
+  // API
   // =============================
   async function sendTarget(lat, lon, acc) {
     const res = await fetch(BASE_URL + "/go", {
@@ -249,44 +200,40 @@
       })
     });
     const data = await res.json();
-    if (!data.ok) throw new Error(data.error || "sendTarget failed");
+    if (!data.ok) throw new Error(data.error);
   }
 
   async function sendCommand(cmd) {
     try {
-      addLocalLog(`Sending command: ${cmd}`);
       const res = await fetch(BASE_URL + "/drone/cmd", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-APP-TOKEN": APP_TOKEN },
         body: JSON.stringify({ command: cmd })
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || "command failed");
+      if (data.ok) addLogToUI(`WEB | Command sent: ${cmd}`, Date.now()/1000);
     } catch (e) {
-      addLocalLog("Command failed: " + e.message);
+      addLogToUI(`WEB | Command failed: ${cmd}`, Date.now()/1000);
     }
   }
 
-  async function clearTarget() {
-    // "Clear queue" for target = write a NULL/empty target.
-    // Your current server doesn't have an endpoint for this.
-    // So we simulate by sending a stale/invalid target that your drone ignores,
-    // BUT better is: add a real /clear_target route in Flask.
-    addLocalLog("Clear Target requested (needs Flask endpoint for true clearing)");
-    addLocalLog("Tip: I can give you the Python endpoint that clears latest_target properly.");
+  // OPTIONAL: You need to add this endpoint in Flask for real queue clearing.
+  // For now, this will still work if you add /clear in python (I can give you it).
+  async function clearQueue() {
+    try {
+      const res = await fetch(BASE_URL + "/clear", {
+        method: "POST",
+        headers: { "X-APP-TOKEN": APP_TOKEN }
+      });
+      const data = await res.json();
+      if (data.ok) addLogToUI(`WEB | Queue cleared`, Date.now()/1000);
+      else addLogToUI(`WEB | Clear failed: ${data.error || "unknown"}`, Date.now()/1000);
+    } catch (e) {
+      addLogToUI(`WEB | Clear failed`, Date.now()/1000);
+    }
   }
 
-  async function clearCommand() {
-    // Same issue: server has no "clear command" route yet.
-    addLocalLog("Clear Command requested (needs Flask endpoint for true clearing)");
-    addLocalLog("Tip: I can give you the Python endpoint that sets command to NONE.");
-  }
-
-  async function clearLogs() {
-    // Same issue: server has no "clear logs" route yet.
-    addLocalLog("Clear Logs requested (needs Flask endpoint for true clearing)");
-    addLocalLog("Tip: I can give you the Python endpoint to delete drone_logs.");
-  }
+  clearBtn.onclick = clearQueue;
 
   async function fetchLogs() {
     try {
@@ -295,199 +242,210 @@
         headers: { "X-APP-TOKEN": APP_TOKEN }
       });
       const data = await res.json();
-      if (!data.ok || !data.logs) return;
-
-      renderLogs(data.logs);
-
-      // Scan logs for latest telemetry lines
-      scanLogsForTelemetry(data.logs);
-
-      // Update connection status
-      updateConnectionUi();
-
+      if (data.ok && data.logs) {
+        renderLogs(data.logs);
+        updateTelemetryFromLogs(data.logs);
+      }
     } catch (e) {
-      // if the site can't reach server
-      connPill.className = "pill bad";
-      connText.textContent = "Drone: Server unreachable";
+      // ignore spam
     }
   }
 
-  // =============================
-  // TELEMETRY PARSING
-  // =============================
-  // We expect lines like:
-  //   "TELEM | lat=53.123456 lon=-3.123456 alt=75.0"
-  // or:
-  //   "STATUS | batt=87% mode=... sats=... lat=... lon=... alt=..."
-  function scanLogsForTelemetry(logs) {
-    // logs are returned newest-first (you reverse display), so scan all and pick newest match.
-    let newestFix = null;
-    let newestBatt = null;
-    let newestAlt = null;
-    let newestTimeMs = 0;
-
-    for (const l of logs) {
-      const msg = String(l.message || "");
-      const tMs = (l.time ? (Number(l.time) * 1000) : 0);
-
-      // Battery: batt=87% OR batt=87
-      const b1 = msg.match(/batt\s*=\s*(\d{1,3})\s*%?/i);
-      if (b1 && tMs >= newestTimeMs) {
-        newestBatt = clampInt(parseInt(b1[1], 10), 0, 100);
-      }
-
-      // Lat/Lon/Alt
-      const m = msg.match(/lat\s*=\s*(-?\d+(\.\d+)?)\s+lon\s*=\s*(-?\d+(\.\d+)?)\s+alt\s*=\s*(-?\d+(\.\d+)?)/i);
-      if (m) {
-        const lat = parseFloat(m[1]);
-        const lon = parseFloat(m[3]);
-        const alt = parseFloat(m[5]);
-
-        if (isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
-          if (tMs >= newestTimeMs) {
-            newestTimeMs = tMs;
-            newestFix = { lat, lon, alt, timeMs: tMs };
-            newestAlt = alt;
-          }
-        }
-      }
-
-      // Also accept separate alt= in status lines
-      const a1 = msg.match(/alt\s*=\s*(-?\d+(\.\d+)?)/i);
-      if (a1 && tMs >= newestTimeMs) {
-        newestAlt = parseFloat(a1[1]);
-      }
-    }
-
-    if (newestBatt !== null && newestBatt !== lastBatt) {
-      lastBatt = newestBatt;
-      battText.textContent = `${lastBatt}%`;
-    }
-
-    if (newestAlt !== null && isFinite(newestAlt) && newestAlt !== lastAlt) {
-      lastAlt = newestAlt;
-      altText.textContent = `${lastAlt.toFixed(1)} m`;
-    }
-
-    if (newestFix) {
-      lastDroneFix = newestFix;
-      lastStatusSeenMs = Date.now();
-
-      // Update map marker
-      const latlng = [newestFix.lat, newestFix.lon];
-      if (!droneMarker) {
-        droneMarker = L.marker(latlng).addTo(map).bindPopup("Drone");
-      } else {
-        droneMarker.setLatLng(latlng);
-      }
-
-      // Update text
-      posText.textContent = `${newestFix.lat.toFixed(6)}, ${newestFix.lon.toFixed(6)} (alt ${newestFix.alt.toFixed(1)}m)`;
-      posAgeText.textContent = "";
-    }
-  }
-
-  function updateConnectionUi() {
-    const now = Date.now();
-
-    if (lastStatusSeenMs === 0) {
-      connPill.className = "pill warn";
-      connText.textContent = "Drone: Waiting…";
-      seenText.textContent = "--";
-      return;
-    }
-
-    const ageS = Math.floor((now - lastStatusSeenMs) / 1000);
-    seenText.textContent = `${ageS}s ago`;
-
-    if (ageS <= DRONE_OFFLINE_AFTER_S) {
-      connPill.className = "pill ok";
-      connText.textContent = "Drone: Connected ✅";
-    } else {
-      connPill.className = "pill bad";
-      connText.textContent = "Drone: Offline 🛑";
-      if (!lastDroneFix) {
-        posText.textContent = "No GPS yet";
-      } else {
-        posAgeText.textContent = `Last fix ${ageS}s ago`;
-      }
-    }
-  }
-
-  function clampInt(v, lo, hi) {
-    if (!isFinite(v)) return lo;
-    return Math.max(lo, Math.min(hi, v));
-  }
+  // Poll logs
+  setInterval(fetchLogs, 1000);
 
   // =============================
   // LOG UI
   // =============================
   function renderLogs(logs) {
-    if (logs.length === 0) return;
+    if (!logs || logs.length === 0) return;
 
+    // logs come newest-first from your server
     let html = "";
     for (const l of logs) {
-      const date = new Date(Number(l.time) * 1000);
+      const date = new Date(l.time * 1000);
       const timeStr = date.toLocaleTimeString([], { hour12: false });
-      html += `<div class="log-item"><span class="log-time">[${timeStr}]</span>${escapeHtml(String(l.message || ""))}</div>`;
+      html += `<div class="log-item"><span class="log-time">[${timeStr}]</span>${escapeHtml(l.message)}</div>`;
     }
     logFeed.innerHTML = html;
   }
 
-  function addLocalLog(msg) {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour12: false });
+  function addLogToUI(msg, timestamp) {
+    const date = new Date(timestamp * 1000);
+    const timeStr = date.toLocaleTimeString([], { hour12: false });
     const entry = `<div class="log-item"><span class="log-time">[${timeStr}]</span>${escapeHtml(msg)}</div>`;
     logFeed.innerHTML = entry + logFeed.innerHTML;
   }
 
   function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, c => ({
-      "&":"&amp;",
-      "<":"&lt;",
-      ">":"&gt;",
-      '"':"&quot;",
-      "'":"&#039;"
-    }[c]));
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;");
   }
 
   // =============================
-  // Buttons
+  // TELEMETRY PARSING (from message strings)
   // =============================
+  let lastPosSeenUnix = 0;
+  let droneMarker = null;
+
+  // tiny drone icon (SVG as data URL)
+  const droneIcon = L.icon({
+    iconUrl: "data:image/svg+xml;utf8," + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="8" fill="#00ff9d"/>
+        <path d="M12 24h16v4H12zM36 24h16v4H36zM12 36h16v4H12zM36 36h16v4H36z" fill="#e9eef6"/>
+        <path d="M22 20l6 6-3 3-6-6zM42 20l-6 6 3 3 6-6zM22 44l6-6-3-3-6 6zM42 44l-6-6 3-3 6 6z" fill="#0ea5e9"/>
+      </svg>
+    `),
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+  });
+
+  function updateTelemetryFromLogs(logs) {
+    // find newest POS and newest BATT/STATUS
+    let posMsg = null;
+    let battPercent = null;
+
+    for (const l of logs) {
+      const m = String(l.message || "");
+      if (!posMsg && m.startsWith("POS |")) posMsg = { msg: m, time: l.time };
+      if (battPercent === null) {
+        // supports "BATT | percent=87" or "STATUS | batt=87%"
+        const b1 = m.match(/\bpercent=(\d{1,3})\b/i);
+        const b2 = m.match(/\bbatt=(\d{1,3})%?/i);
+        if (b1) battPercent = parseInt(b1[1], 10);
+        else if (b2) battPercent = parseInt(b2[1], 10);
+      }
+      if (posMsg && battPercent !== null) break;
+    }
+
+    // connection / last seen
+    const now = Math.floor(Date.now()/1000);
+
+    if (posMsg) {
+      lastPosSeenUnix = posMsg.time;
+
+      const lat = pickNumber(posMsg.msg, "lat");
+      const lon = pickNumber(posMsg.msg, "lon");
+      const alt = pickNumber(posMsg.msg, "alt"); // expects "alt=12.3m" or "alt=12.3"
+      const sats = pickInt(posMsg.msg, "sats");
+      const flying = pickBool(posMsg.msg, "flying");
+      const phase = pickString(posMsg.msg, "phase");
+
+      if (isFinite(lat) && isFinite(lon)) {
+        posText.textContent = `Pos: ${lat.toFixed(5)}, ${lon.toFixed(5)} (sats ${sats ?? "--"})`;
+
+        if (!droneMarker) {
+          droneMarker = L.marker([lat, lon], { icon: droneIcon }).addTo(map).bindPopup("Drone");
+        } else {
+          droneMarker.setLatLng([lat, lon]);
+        }
+
+        // update altitude pill
+        if (isFinite(alt)) {
+          setPill(altPill, "ok", altText, `Alt: ${alt.toFixed(1)} m`);
+        } else {
+          setPill(altPill, "warn", altText, `Alt: -- m`);
+        }
+
+        // connection pill
+        const age = now - posMsg.time;
+        if (age <= 4) {
+          setPill(connPill, "ok", connText, `Drone: connected (${flying ? "flying" : "idle"} / ${phase || "?"})`);
+        } else if (age <= 15) {
+          setPill(connPill, "warn", connText, `Drone: last seen ${age}s ago`);
+        } else {
+          setPill(connPill, "bad", connText, `Drone: offline (${age}s)`);
+        }
+      }
+    } else {
+      // no pos logs yet
+      setPill(connPill, "warn", connText, "Drone: no POS logs yet");
+    }
+
+    // battery pill
+    if (battPercent !== null && !isNaN(battPercent)) {
+      if (battPercent >= 35) setPill(battPill, "ok", battText, `Battery: ${battPercent}%`);
+      else if (battPercent >= 20) setPill(battPill, "warn", battText, `Battery: ${battPercent}%`);
+      else setPill(battPill, "bad", battText, `Battery: ${battPercent}%`);
+    } else {
+      setPill(battPill, "warn", battText, "Battery: --%");
+    }
+  }
+
+  function pickNumber(msg, key) {
+    // matches key=12.3 or key=12.3m
+    const re = new RegExp("\\b" + key + "=(-?\\d+(?:\\.\\d+)?)", "i");
+    const m = String(msg).match(re);
+    if (!m) return NaN;
+    return parseFloat(m[1]);
+  }
+  function pickInt(msg, key) {
+    const re = new RegExp("\\b" + key + "=(\\d+)", "i");
+    const m = String(msg).match(re);
+    if (!m) return null;
+    return parseInt(m[1], 10);
+  }
+  function pickBool(msg, key) {
+    const re = new RegExp("\\b" + key + "=(true|false)", "i");
+    const m = String(msg).match(re);
+    if (!m) return null;
+    return m[1].toLowerCase() === "true";
+  }
+  function pickString(msg, key) {
+    const re = new RegExp("\\b" + key + "=([A-Z_]+)", "i");
+    const m = String(msg).match(re);
+    if (!m) return null;
+    return m[1];
+  }
+
+  // =============================
+  // MAP + TARGET
+  // =============================
+  const map = L.map("map").setView([MAP_CENTER.lat, MAP_CENTER.lon], MAP_ZOOM);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+
+  let targetMarker = null;
+  let selected = null;
+
+  map.on("click", e => {
+    selected = e.latlng;
+    if (!targetMarker) targetMarker = L.marker(selected).addTo(map);
+    else targetMarker.setLatLng(selected);
+
+    targetText.textContent = `${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`;
+    sendBtn.disabled = false;
+    sendBtn.textContent = "FLY TO TARGET";
+  });
+
   sendBtn.onclick = async () => {
-    if (!selected) return;
     try {
       sendBtn.disabled = true;
-      addLocalLog("Sending target…");
+      sendBtn.textContent = "SENDING…";
       await sendTarget(selected.lat, selected.lng, 15.0);
-      addLocalLog("Target sent ✅");
+      sendBtn.textContent = "SENT ✅";
+      addLogToUI(`WEB | Target sent: ${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`, Date.now()/1000);
     } catch (e) {
-      addLocalLog("Send failed: " + e.message);
       sendBtn.disabled = false;
+      sendBtn.textContent = "FLY TO TARGET";
+      addLogToUI(`WEB | Target send failed: ${e.message}`, Date.now()/1000);
     }
   };
 
   gpsBtn.onclick = async () => {
-    addLocalLog("Getting your GPS…");
     navigator.geolocation.getCurrentPosition(async pos => {
       const { latitude, longitude, accuracy } = pos.coords;
-      targetText.textContent = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+      targetText.textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
       try {
         await sendTarget(latitude, longitude, accuracy);
-        addLocalLog(`GPS target sent ✅ (acc ${accuracy.toFixed(1)}m)`);
+        addLogToUI(`WEB | GPS sent: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} acc=${Math.round(accuracy)}m`, Date.now()/1000);
       } catch (e) {
-        addLocalLog("Send failed: " + e.message);
+        addLogToUI(`WEB | GPS send failed: ${e.message}`, Date.now()/1000);
       }
-    }, err => {
-      addLocalLog("GPS error: " + err.message);
-    }, { enableHighAccuracy: true });
+    }, _ => addLogToUI("WEB | GPS error", Date.now()/1000), { enableHighAccuracy: true });
   };
-
-  // =============================
-  // Polling
-  // =============================
-  setInterval(fetchLogs, POLL_LOGS_MS);
-  fetchLogs(); // fire immediately
 </script>
 </body>
 </html>
